@@ -1,0 +1,41 @@
+# 미션 메타데이터
+name: "리눅스 시스템 보안 및 관제 기초 설정"
+description: "SSH 보안, 방화벽, 계정 관리, 관제 스크립트 작성"
+level: 1
+category: "linux"
+time_limit: 900  # 15분 (초 단위)
+passing_score: 70
+
+# 사용할 검증기 목록
+validators:
+  - module: "plugins.linux.validators.ssh_validator"
+    class: "SSHValidator"
+    weight: 30
+
+  - module: "plugins.linux.validators.firewall_validator"
+    class: "FirewallValidator"
+    weight: 20
+
+  - module: "plugins.linux.validators.account_validator"
+    class: "AccountValidator"
+    weight: 20
+
+  - module: "plugins.linux.validators.script_validator"
+    class: "ScriptValidator"
+    weight: 30
+
+# 실행 환경 설정
+execution:
+  timeout: 300  # 검증 스크립트 실행 타임아웃 (5분)
+  sandbox: false  # 샌드박스 환경 사용 여부 (향후 Docker 지원)
+  working_directory: "/opt/grading"
+
+# AI 함정 요소 정리
+ai_traps:
+  - item: "ssh_root_login_no"
+    trap_description: "AI가 PermitRootLogin prohibit-password로 설정할 수 있음"
+    correct_answer: "PermitRootLogin no"
+
+  - item: "script_executable"
+    trap_description: "AI가 chmod 644로 설정할 수 있음"
+    correct_answer: "chmod 755"

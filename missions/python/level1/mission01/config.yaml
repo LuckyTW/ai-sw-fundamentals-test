@@ -1,0 +1,49 @@
+# 미션 메타데이터
+name: "Python 도서 관리 시스템 코딩 시험"
+description: "PBL 학습 개념(dataclass, 제너레이터, 데코레이터, 파일 I/O, CLI)을 새로운 도메인에 적용하는 코딩 시험"
+level: 1
+category: "python"
+time_limit: 900  # 15분 (초 단위)
+passing_score: 70
+
+# 사용할 검증기 목록 (총 100점)
+validators:
+  - module: "plugins.python.validators.model_validator"
+    class: "ModelValidator"
+    weight: 25
+
+  - module: "plugins.python.validators.pattern_validator"
+    class: "PatternValidator"
+    weight: 25
+
+  - module: "plugins.python.validators.cli_validator"
+    class: "CLIValidator"
+    weight: 30
+
+  - module: "plugins.python.validators.persistence_validator"
+    class: "PersistenceValidator"
+    weight: 20
+
+# 실행 환경 설정
+execution:
+  timeout: 300
+  sandbox: false
+  working_directory: null  # submission_dir 사용
+
+# AI 함정 요소 정리 (4개)
+ai_traps:
+  - item: "pattern_yield"
+    trap_description: "AI가 yield 없이 일반 리스트 반환으로 구현할 수 있음"
+    correct_answer: "search_books를 yield 제너레이터로 구현"
+
+  - item: "pattern_no_any"
+    trap_description: "AI가 타입 힌트에 Any를 과도하게 사용할 수 있음"
+    correct_answer: "구체적인 타입(str, int, List[...]) 사용, Any 비율 30% 미만"
+
+  - item: "cli_help"
+    trap_description: "AI가 --help 옵션을 구현하지 않거나 argparse 없이 구현할 수 있음"
+    correct_answer: "argparse 등으로 --help 옵션 지원"
+
+  - item: "persist_no_pickle"
+    trap_description: "AI가 편의상 pickle로 직렬화할 수 있음"
+    correct_answer: "json/csv 등 텍스트 기반 직렬화 사용"
