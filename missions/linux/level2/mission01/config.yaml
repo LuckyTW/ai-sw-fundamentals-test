@@ -1,0 +1,37 @@
+# 미션 메타데이터
+name: "리눅스 서버 보안 감사 도구"
+description: "리눅스 설정 파일 스냅샷 6개를 분석하여 보안 취약점을 탐지하는 감사 리포트를 생성하는 코딩 시험"
+level: 2
+category: "linux"
+time_limit: 1500  # 25분 (초 단위)
+passing_score: 70
+
+# 사용할 검증기 목록 (단일 Validator, 100점)
+validators:
+  - module: "plugins.linux.validators.linux_auditor_validator"
+    class: "LinuxAuditorValidator"
+    weight: 100
+
+# 실행 환경 설정
+execution:
+  timeout: 300
+  sandbox: false
+  working_directory: null  # submission_dir 사용
+
+# AI 함정 요소 정리 (4개)
+ai_traps:
+  - item: "ssh_audit"
+    trap_description: "PermitRootLogin prohibit-password를 안전으로 오판"
+    correct_answer: "prohibit-password는 키 인증 루트 로그인 허용 → 취약"
+
+  - item: "firewall_audit"
+    trap_description: "23/tcp(Telnet) 취약 포트 미탐지"
+    correct_answer: "23번 포트는 Telnet으로 암호화 없는 원격 접속 → 즉시 차단 필요"
+
+  - item: "account_audit"
+    trap_description: "agent-test의 agent-core 그룹 포함 RBAC 위반 미탐지"
+    correct_answer: "테스트 계정이 핵심 운영 그룹에 포함 → 최소 권한 원칙 위반"
+
+  - item: "permission_audit"
+    trap_description: "api_keys 775+agent-common 권한 위반 미탐지"
+    correct_answer: "민감 디렉토리에 광범위 그룹 쓰기 권한 → 데이터 유출 위험"
