@@ -528,6 +528,8 @@ ai_traps:
 ### 커밋 히스토리
 
 ```
+b5023d5  ✨ feat: Mini LRU 캐시 구현 시험 미션 추가 (ds_level1_mission01)
+1b7d717  ✨ feat: 리눅스 서버 보안 감사 도구 미션 추가 (linux_level2_mission01)
 ba8e995  feat: 서버 접근 로그 분석기 미션 추가 (python_level1_mission02)
 10cdc99  feat: 코디세이 자동 채점 프레임워크 초기 구현
 ```
