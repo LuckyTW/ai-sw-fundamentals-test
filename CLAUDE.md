@@ -19,11 +19,11 @@ PBL(Problem-Based Learning) 교육 후 학습자의 학습 성취도를 자동 �
 # 의존성 설치
 pip3 install -r requirements.txt
 
-# 리눅스 미션 채점 (실제 리눅스 환경 필요)
-python3 scripts/run_grading.py --student-id <학생ID> --mission-id linux_level1_mission01 --output-dir results
-
 # 리눅스 보안 감사 미션 채점 (macOS/Linux 가능, --submission-dir 필수)
 python3 scripts/run_grading.py --student-id <학생ID> --mission-id linux_level2_mission01 --submission-dir /path/to/submission
+
+# 샘플 정답 코드로 Linux mission01 채점 (테스트용)
+python3 scripts/run_grading.py --student-id sample --mission-id linux_level2_mission01 --submission-dir sample_submission_linux
 
 # Python 미션 채점 (--submission-dir 필수)
 python3 scripts/run_grading.py --student-id <학생ID> --mission-id python_level1_mission01 --submission-dir /path/to/submission
@@ -35,8 +35,17 @@ python3 scripts/run_grading.py --student-id <학생ID> --mission-id ds_level1_mi
 # 샘플 정답 코드로 Python mission01 채점 (테스트용)
 python3 scripts/run_grading.py --student-id sample --mission-id python_level1_mission01 --submission-dir sample_submission
 
+# 샘플 정답 코드로 Python mission02 채점 (테스트용)
+python3 scripts/run_grading.py --student-id sample --mission-id python_level1_mission02 --submission-dir sample_submission_python02
+
 # 샘플 정답 코드로 DS mission01 채점 (테스트용)
 python3 scripts/run_grading.py --student-id sample --mission-id ds_level1_mission01 --submission-dir sample_submission_ds
+
+# 알고리즘 미션 채점 (--submission-dir 필수)
+python3 scripts/run_grading.py --student-id <학생ID> --mission-id algo_level2_mission01 --submission-dir /path/to/submission
+
+# 샘플 정답 코드로 Algo mission01 채점 (테스트용)
+python3 scripts/run_grading.py --student-id sample --mission-id algo_level2_mission01 --submission-dir sample_submission_algo
 ```
 
 테스트 디렉토리(`tests/`)는 존재하나 아직 구현된 테스트 없음.
@@ -65,11 +74,7 @@ linux-test/
 │   └── config_loader.py                # YAML 설정 로더
 │
 ├── plugins/                            # Validator 플러그인 (미션 유형별)
-│   ├── linux/validators/               #   리눅스 미션용 (5개)
-│   │   ├── ssh_validator.py
-│   │   ├── firewall_validator.py
-│   │   ├── account_validator.py
-│   │   ├── script_validator.py
+│   ├── linux/validators/               #   리눅스 미션용 (1개)
 │   │   └── linux_auditor_validator.py  #   보안 감사 도구 (subprocess+tmpdir 기반)
 │   ├── python/validators/              #   Python 미션용 (5개 + 헬퍼)
 │   │   ├── _helpers.py                 #     공통 유틸 (import_student_module 등)
@@ -78,15 +83,20 @@ linux-test/
 │   │   ├── cli_validator.py
 │   │   ├── persistence_validator.py
 │   │   └── log_analyzer_validator.py
-│   └── ds/validators/                  #   자료구조 미션용 (4개)
-│       ├── structure_validator.py      #     AST 분석형 (Node 클래스, 금지 import)
-│       ├── basic_command_validator.py  #     subprocess형 (SET/GET/DEL/EXISTS/DBSIZE)
-│       ├── lru_validator.py            #     subprocess형 (LRU 제거, GET 갱신, INFO)
-│       └── ttl_validator.py            #     Popen형 (EXPIRE/TTL, lazy deletion)
+│   ├── ds/validators/                  #   자료구조 미션용 (4개)
+│   │   ├── structure_validator.py      #     AST 분석형 (Node 클래스, 금지 import)
+│   │   ├── basic_command_validator.py  #     subprocess형 (SET/GET/DEL/EXISTS/DBSIZE)
+│   │   ├── lru_validator.py            #     subprocess형 (LRU 제거, GET 갱신, INFO)
+│   │   └── ttl_validator.py            #     Popen형 (EXPIRE/TTL, lazy deletion)
+│   └── algo/validators/                #   알고리즘 미션용 (4개 + 헬퍼)
+│       ├── _helpers.py                 #     공통 유틸 (generate_hash, parse_responses)
+│       ├── structure_validator.py      #     AST 분석형 (Commit 클래스, 금지 sort, dict 저장소)
+│       ├── basic_command_validator.py  #     subprocess형 (INIT/COMMIT/BRANCH/SWITCH)
+│       ├── graph_algorithm_validator.py #    subprocess형 (PATH/ANCESTORS/LOG, 독립 세션)
+│       └── search_sort_validator.py    #     subprocess형 (SEARCH/LOG --sort-by)
 │
 ├── missions/                           # 미션 정의 (config.yaml + problem.md + solution.md)
 │   ├── linux/
-│   │   ├── level1/mission01/           #   리눅스 시스템 보안 및 관제 기초 설정
 │   │   └── level2/mission01/           #   리눅스 서버 보안 감사 도구 (Python 제출)
 │   ├── python/
 │   │   ├── level1/mission01/           #   Python 도서 관리 시스템 코딩 시험
@@ -94,9 +104,12 @@ linux-test/
 │   │   └── level1/mission02/           #   서버 접근 로그 분석기
 │   │       └── template/
 │   │           └── access_log_sample.csv
-│   └── ds/
-│       └── level1/mission01/           #   Mini LRU 캐시 구현 시험
-│           └── template/              #     lru_cache.py, cli.py
+│   ├── ds/
+│   │   └── level1/mission01/           #   Mini LRU 캐시 구현 시험
+│   │       └── template/              #     lru_cache.py, cli.py
+│   └── algo/
+│       └── level2/mission01/           #   Mini Git 커밋 그래프 시뮬레이터
+│           └── template/              #     mini_git.py, cli.py
 │
 ├── sample_submission/                  # python_level1_mission01 정답 예시 코드
 │   ├── models.py                       #   @dataclass Book
@@ -104,9 +117,19 @@ linux-test/
 │   ├── storage.py                      #   JSONL 직렬화/역직렬화
 │   └── cli.py                          #   argparse CLI (add/list/search)
 │
+├── sample_submission_python02/         # python_level1_mission02 정답 예시 코드
+│   └── log_analyzer.py                 #   CSV 파싱 + IP/상태코드/엔드포인트 분석
+│
 ├── sample_submission_ds/               # ds_level1_mission01 정답 예시 코드
 │   ├── lru_cache.py                    #   Node + DoublyLinkedList + LRUCache
 │   └── cli.py                          #   Redis 스타일 REPL CLI
+│
+├── sample_submission_linux/             # linux_level2_mission01 정답 예시 코드
+│   └── auditor.py                      #   설정 파일 파싱 + 보안 감사 + 리포트 생성
+│
+├── sample_submission_algo/             # algo_level2_mission01 정답 예시 코드
+│   ├── mini_git.py                     #   Commit + CommitGraph + InvertedIndex + merge_sort + BFS
+│   └── cli.py                          #   Git 스타일 REPL CLI
 │
 ├── results/                            # 채점 결과 출력 디렉토리
 ├── submissions/                        # 학생 제출물 보관 (빈 디렉토리)
@@ -152,35 +175,13 @@ CLI (run_grading.py)
 - `collect_py_files(dir)` — .py 파일 수집
 - `parse_all_files(dir)` — AST 파싱
 
+`plugins/algo/validators/_helpers.py`:
+- `generate_hash(message, seq)` — 검증용 해시 생성 (학생 코드와 동일)
+- `parse_responses(stdout)` — REPL stdout에서 프롬프트 제거 후 응답 추출
+
 ---
 
 ## 미션 목록
-
-### linux_level1_mission01 — 리눅스 시스템 보안 및 관제 기초 설정
-
-- **제한시간**: 900초 (15분) | **합격**: 70점
-- **실행 환경**: 실제 리눅스 환경 필수 (macOS 불가)
-
-| Validator | 가중치 | CheckItem (총 12개) | 배점 |
-|-----------|--------|---------------------|------|
-| `SSHValidator` | 30 | ssh_port_20022 | 15점 |
-| | | ssh_root_login_no | 15점 (**AI 트랩**) |
-| `FirewallValidator` | 20 | ufw_enabled | 5점 |
-| | | ufw_port_20022 | 5점 |
-| | | ufw_port_80 | 5점 |
-| | | ufw_port_443 | 5점 |
-| `AccountValidator` | 20 | user_agent_admin_exists | 7점 |
-| | | user_agent_dev_exists | 7점 |
-| | | user_admin_in_common_group | 3점 |
-| | | user_dev_in_common_group | 3점 |
-| `ScriptValidator` | 30 | script_exists | 15점 |
-| | | script_executable | 15점 (**AI 트랩**) |
-
-**AI 트랩 포인트**:
-- `ssh_root_login_no`: AI가 `PermitRootLogin prohibit-password`로 설정 → 정답은 `no`
-- `script_executable`: AI가 `chmod 644`로 설정 → 정답은 `chmod 755`
-
----
 
 ### python_level1_mission01 — Python 도서 관리 시스템 코딩 시험
 
@@ -226,24 +227,24 @@ CLI (run_grading.py)
 - **제한시간**: 900초 (15분) | **합격**: 70점
 - **실행 환경**: macOS/Linux 모두 가능 (subprocess + tmpdir 기반)
 - **샘플 데이터**: `missions/python/level1/mission02/template/access_log_sample.csv`
+- **정답 예시**: `sample_submission_python02/` 디렉토리
 
 | Validator | 가중치 | CheckItem (총 7개) | 배점 |
 |-----------|--------|---------------------|------|
-| `LogAnalyzerValidator` | 100 | csv_parse | 10점 |
-| | | top_ips | 15점 (**AI 트랩**) |
-| | | ip_order | 15점 (**AI 트랩**) |
-| | | status_ratio | 20점 (**AI 트랩**) |
-| | | slow_order | 15점 |
-| | | report_sections | 15점 |
-| | | slow_values | 10점 (**AI 트랩**) |
+| `LogAnalyzerValidator` | 100 | csv_parse | 15점 |
+| | | top_ips | 15점 |
+| | | ip_order | 8점 (**AI 트랩**) |
+| | | status_ratio | 10점 (**AI 트랩**) |
+| | | slow_order | 20점 |
+| | | report_sections | 25점 |
+| | | slow_values | 7점 (**AI 트랩**) |
 
-**AI 트랩 포인트**:
-- `top_ips`: 빈 IP 행("")을 IP로 집계하는 실수
+**AI 트랩 포인트** (3개, 합계 25점 — 모두 실패해도 75점 Pass):
 - `ip_order`: 동점 IP를 오름차순 정렬 → 정답은 내림차순
-- `status_ratio`: 1xx 상태코드를 무시하여 비율 오류 (전체 24행 기준)
+- `status_ratio`: 1xx 상태코드를 무시하여 리포트에 1xx 비율이 누락
 - `slow_values`: response_time 소수점(33.7)을 정수 처리하여 평균 오차 발생
 
-**Validator 패턴**: subprocess 실행형 + 파일 I/O형 (tmpdir에 CSV 복사 → 학생 코드 실행 → 리포트 파일 검증)
+**Validator 패턴**: subprocess 실행형 + 파일 I/O형 (tmpdir에 CSV 생성 → 학생 코드 실행 → 리포트 파일 검증)
 
 ---
 
@@ -263,13 +264,16 @@ CLI (run_grading.py)
 | | | log_stats | 15점 |
 | | | report_sections | 15점 |
 
-**AI 트랩 포인트**:
+**AI 트랩 포인트** (4개, 합계 60점 — 2개 이상 수정 시 Pass):
 - `ssh_audit`: PermitRootLogin `prohibit-password`를 "안전"으로 오판 → 정답은 `no`만 안전
 - `firewall_audit`: 23/tcp(Telnet) 위험 포트 미탐지
 - `account_audit`: agent-test의 agent-core 그룹 포함 RBAC 위반 미탐지
 - `permission_audit`: api_keys 디렉토리 775+agent-common 권한 위반 미탐지
 
+**검증 방식**: 라인 기반 매칭 (해당 토픽 라인에서만 취약 키워드 확인, 타 섹션 간 오염 방지)
+
 **Validator 패턴**: subprocess 실행형 + 파일 I/O형 (tmpdir에 설정 파일 6개 생성 → 학생 코드 실행 → 리포트 파일 검증)
+- **정답 예시**: `sample_submission_linux/` 디렉토리
 
 ---
 
@@ -307,6 +311,49 @@ CLI (run_grading.py)
 - AST 분석형: `StructureValidator` — Node 클래스, 금지 import, 연결 리스트 메서드 검사
 - subprocess 실행형: `BasicCommandValidator`, `LRUValidator` — `subprocess.run()` + stdin pipe
 - Popen형: `TTLValidator` — `subprocess.Popen()` + `time.sleep()`으로 TTL 만료 테스트
+
+---
+
+### algo_level2_mission01 — Mini Git 커밋 그래프 시뮬레이터
+
+- **제한시간**: 1500초 (25분) | **합격**: 70점
+- **실행 환경**: macOS/Linux 모두 가능 (subprocess.run 기반)
+- **제출물**: `mini_git.py`, `cli.py` (2개 파일)
+- **정답 예시**: `sample_submission_algo/` 디렉토리
+
+| Validator | 가중치 | CheckItem (총 16개) | 배점 |
+|-----------|--------|---------------------|------|
+| `StructureValidator` | 20 | commit_class | 8점 |
+| | | no_builtin_sort | 7점 (**AI 트랩**) |
+| | | graph_structure | 5점 |
+| `BasicCommandValidator` | 20 | cli_runnable | 3점 |
+| | | init_command | 5점 |
+| | | commit_basic | 6점 |
+| | | branch_switch | 6점 |
+| `GraphAlgorithmValidator` | 35 | commit_parent_after_switch | 7점 (**AI 트랩**) |
+| | | log_all_branches | 8점 (**AI 트랩**) |
+| | | path_same_branch | 5점 |
+| | | path_cross_branch | 10점 (**AI 트랩**) |
+| | | ancestors_complete | 5점 |
+| `SearchSortValidator` | 25 | search_keyword | 7점 |
+| | | search_no_result | 5점 |
+| | | search_author | 6점 |
+| | | sort_by_date | 7점 |
+
+**AI 트랩 포인트**:
+- `no_builtin_sort`: sorted()/list.sort()/heapq 사용 → merge sort 직접 구현 필요
+- `commit_parent_after_switch`: SWITCH 후 전역 "마지막 커밋"을 부모로 설정 → HEAD 브랜치의 최신 커밋이 부모
+- `log_all_branches`: 현재 브랜치만 출력 → 저장소의 모든 커밋을 시간순 출력
+- `path_cross_branch`: 부모 방향으로만 BFS → DAG를 무방향 그래프로 취급하여 BFS
+
+**설계 특이사항**:
+- 테스트 독립성: `path_same_branch`는 독립 세션(선형 체인)으로 테스트하여 `commit_parent` 트랩에 의한 연쇄 실패 방지
+- 템플릿 CLI 구조 제공: `cli.py` 템플릿에 REPL 루프 + 명령어 파싱 기본 구조 포함 (학생은 로직만 구현)
+- 결정적 해시: `generate_hash(message, seq)` 함수를 템플릿에 제공하여 validator가 해시값 사전 계산 가능
+
+**Validator 패턴 분류**:
+- AST 분석형: `StructureValidator` — Commit 클래스, 금지 sort 함수, dict 저장소 검사
+- subprocess 실행형: `BasicCommandValidator`, `GraphAlgorithmValidator`, `SearchSortValidator` — `subprocess.run()` + stdin pipe
 
 ---
 
@@ -500,9 +547,8 @@ ai_traps:
 - **의존성**: PyYAML 외에는 Python 표준 라이브러리만 사용 (subprocess, os, re, json, pathlib, dataclasses, abc, csv, tempfile, ast)
 - **AI 트랩**: `CheckItem`의 `ai_trap=True` 플래그로 AI가 흔히 틀리는 항목 표시
 - **subprocess 호출**: 5~10초 타임아웃 적용
-- **리눅스 level1 미션 검증은 실제 리눅스 환경 필요** (macOS에서는 프레임워크 동작만 확인 가능)
 - **리눅스 level2 미션 검증은 macOS/Linux 모두 가능** (Python 파일 제출 → subprocess + tmpdir 기반)
-- **Python 미션 검증은 macOS/Linux 모두 가능** (subprocess + tmpdir 기반)
+- **Python/DS/Algo 미션 검증은 macOS/Linux 모두 가능** (subprocess + tmpdir 기반)
 
 ---
 
@@ -512,17 +558,15 @@ ai_traps:
 
 | 구분 | 수치 |
 |------|------|
-| 총 미션 수 | 5개 (Linux 2, Python 2, DS 1) |
-| 총 Validator 클래스 | 14개 (Linux 5, Python 5, DS 4) |
-| 총 CheckItem 수 | 58개 (Linux level1 12 + level2 7, Python mission01 17 + mission02 7, DS mission01 15) |
-| 총 AI 트랩 항목 | 18개 (Linux level1 2 + level2 4, Python mission01 4 + mission02 4, DS mission01 4) |
-| 채점 결과 파일 | 7쌍 이상 (JSON+MD) 생성 이력 존재 |
-| 정답 예시 코드 | `sample_submission/` (Python mission01), `sample_submission_ds/` (DS mission01) |
+| 총 미션 수 | 5개 (Linux 1, Python 2, DS 1, Algo 1) |
+| 총 Validator 클래스 | 14개 (Linux 1, Python 5, DS 4, Algo 4) |
+| 총 CheckItem 수 | 62개 (Linux level2 7, Python mission01 17 + mission02 7, DS mission01 15, Algo level2 16) |
+| 총 AI 트랩 항목 | 19개 (Linux level2 4, Python mission01 4 + mission02 3, DS mission01 4, Algo level2 4) |
+| 정답 예시 코드 | `sample_submission/` (Python mission01), `sample_submission_python02/` (Python mission02), `sample_submission_linux/` (Linux level2), `sample_submission_ds/` (DS mission01), `sample_submission_algo/` (Algo level2 mission01) |
 
 ### 미구현 / 향후 작업
 
 - `tests/` — 테스트 코드 미구현 (디렉토리 구조만 존재)
-- `sample_submission/` — mission02 정답 예시 미작성
 - 추가 미션 확장 가능: 알고리즘, 자료구조, 데이터베이스 등
 
 ### 커밋 히스토리
