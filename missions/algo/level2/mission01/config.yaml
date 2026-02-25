@@ -1,0 +1,49 @@
+# 미션 메타데이터
+name: "Mini Git 커밋 그래프 시뮬레이터"
+description: "커밋 DAG, BFS 경로 탐색, 역색인 검색, merge sort 직접 구현 능력을 검증"
+level: 2
+category: "algo"
+time_limit: 1500  # 25분 (초 단위)
+passing_score: 70
+
+# 사용할 검증기 목록 (총 100점)
+validators:
+  - module: "plugins.algo.validators.structure_validator"
+    class: "StructureValidator"
+    weight: 20
+
+  - module: "plugins.algo.validators.basic_command_validator"
+    class: "BasicCommandValidator"
+    weight: 20
+
+  - module: "plugins.algo.validators.graph_algorithm_validator"
+    class: "GraphAlgorithmValidator"
+    weight: 35
+
+  - module: "plugins.algo.validators.search_sort_validator"
+    class: "SearchSortValidator"
+    weight: 25
+
+# 실행 환경 설정
+execution:
+  timeout: 300
+  sandbox: false
+  working_directory: null  # submission_dir 사용
+
+# AI 함정 요소 정리 (4개)
+ai_traps:
+  - item: "no_builtin_sort"
+    trap_description: "AI가 sorted()/list.sort()/heapq로 정렬 구현"
+    correct_answer: "merge sort 또는 quick sort 직접 구현"
+
+  - item: "commit_parent_after_switch"
+    trap_description: "AI가 전역 '마지막 커밋'을 부모로 설정 (SWITCH 후 잘못된 부모)"
+    correct_answer: "HEAD가 가리키는 브랜치의 최신 커밋을 부모로 설정"
+
+  - item: "log_all_branches"
+    trap_description: "AI가 현재 브랜치(HEAD 도달 가능) 커밋만 출력"
+    correct_answer: "저장소의 모든 커밋을 시간순 출력"
+
+  - item: "path_cross_branch"
+    trap_description: "AI가 부모 방향으로만 BFS → 다른 브랜치 간 경로 탐색 실패"
+    correct_answer: "DAG를 무방향 그래프로 취급하여 BFS"
