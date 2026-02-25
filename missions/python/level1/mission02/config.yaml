@@ -18,12 +18,8 @@ execution:
   sandbox: false
   working_directory: null  # submission_dir 사용
 
-# AI 함정 요소 정리 (4개)
+# AI 함정 요소 정리 (3개)
 ai_traps:
-  - item: "top_ips"
-    trap_description: "CSV에 빈 IP 행이 포함되어 있어 AI가 빈 문자열을 IP로 집계할 수 있음"
-    correct_answer: "빈 IP 행은 IP 집계에서 제외"
-
   - item: "ip_order"
     trap_description: "동점 IP 정렬 시 AI가 오름차순으로 정렬할 수 있음"
     correct_answer: "접근 횟수 내림차순, 동점 시 IP 주소도 내림차순"

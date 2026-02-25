@@ -218,74 +218,81 @@ class LinuxAuditorValidator(BaseValidator):
         return self.report_content is not None and len(self.report_content.strip()) > 0
 
     def _check_ssh_audit(self) -> bool:
-        """SSH 감사: PermitRootLogin 관련 취약점이 리포트에 있는지 확인"""
+        """SSH 감사: PermitRootLogin 관련 라인에서 취약점 판정 확인 (라인 기반)
+
+        AI 트랩: AI가 prohibit-password를 'Safe'로 판정.
+        라인 기반 매칭으로 PermitRootLogin 라인에 취약 키워드가 있는지 확인.
+        """
         if not self.report_content:
             return False
 
-        report = self.report_content.lower()
-
-        # "ssh" 섹션이 존재해야 함
-        if "ssh" not in report:
-            return False
-
-        # root 로그인 관련 취약점/위험 키워드가 있어야 함
-        # (prohibit-password를 "안전"으로 판정하면 이 키워드가 없음)
-        root_keywords = ["root"]
+        topic_keywords = ["permitrootlogin", "prohibit-password", "root login", "루트 로그인"]
         vuln_keywords = ["취약", "위험", "vulnerable", "unsafe", "warning", "주의", "경고"]
 
-        has_root = any(kw in report for kw in root_keywords)
-        has_vuln = any(kw in report for kw in vuln_keywords)
-
-        return has_root and has_vuln
+        for line in self.report_content.split("\n"):
+            line_lower = line.lower()
+            if any(kw in line_lower for kw in topic_keywords):
+                if any(kw in line_lower for kw in vuln_keywords):
+                    return True
+        return False
 
     def _check_firewall_audit(self) -> bool:
-        """방화벽 감사: 23/tcp(Telnet) 위험 포트가 탐지되었는지 확인"""
+        """방화벽 감사: 23/tcp 라인에서 위험 판정 확인 (라인 기반)
+
+        AI 트랩: AI가 23/tcp(Telnet)를 일반 포트로 취급.
+        라인 기반 매칭으로 23번 포트 라인에 취약 키워드가 있는지 확인.
+        """
         if not self.report_content:
             return False
 
-        report = self.report_content.lower()
-
-        # 23번 포트 또는 telnet 관련 언급이 있어야 함
-        has_port = "23" in report or "telnet" in report
-        # 취약/위험/차단 키워드가 있어야 함
         vuln_keywords = ["취약", "위험", "차단", "block", "deny", "vulnerable",
                          "unsafe", "warning", "주의", "경고", "close"]
-        has_vuln = any(kw in report for kw in vuln_keywords)
 
-        return has_port and has_vuln
+        for line in self.report_content.split("\n"):
+            line_lower = line.lower()
+            if "23" in line_lower and ("tcp" in line_lower or "telnet" in line_lower):
+                if any(kw in line_lower for kw in vuln_keywords):
+                    return True
+        return False
 
     def _check_account_audit(self) -> bool:
-        """계정 감사: agent-test의 agent-core 그룹 포함 RBAC 위반 탐지"""
+        """계정 감사: agent-test 라인에서 RBAC 위반 판정 확인 (라인 기반)
+
+        AI 트랩: AI가 agent-test의 agent-core 그룹 포함을 정상으로 판정.
+        라인 기반 매칭으로 agent-test 라인에 위반 키워드가 있는지 확인.
+        """
         if not self.report_content:
             return False
 
-        report = self.report_content.lower()
-
-        # agent-test 관련 언급이 있어야 함
-        has_test_account = "agent-test" in report
-        # 위반/취약 키워드가 있어야 함
         vuln_keywords = ["위반", "취약", "violation", "vulnerable", "unauthorized",
                          "unnecessary", "불필요", "위험", "warning", "주의", "경고",
                          "제거", "remove"]
-        has_vuln = any(kw in report for kw in vuln_keywords)
 
-        return has_test_account and has_vuln
+        for line in self.report_content.split("\n"):
+            line_lower = line.lower()
+            if "agent-test" in line_lower:
+                if any(kw in line_lower for kw in vuln_keywords):
+                    return True
+        return False
 
     def _check_permission_audit(self) -> bool:
-        """권한 감사: api_keys 775+agent-common 권한 위반 탐지"""
+        """권한 감사: api_keys 라인에서 권한 위반 판정 확인 (라인 기반)
+
+        AI 트랩: AI가 api_keys 775 권한을 일반적으로 판정.
+        라인 기반 매칭으로 api_keys 라인에 취약 키워드가 있는지 확인.
+        """
         if not self.report_content:
             return False
 
-        report = self.report_content.lower()
-
-        # api_keys 관련 언급이 있어야 함
-        has_api_keys = "api_keys" in report or "api-keys" in report
-        # 취약/위험/775 키워드가 있어야 함
-        vuln_keywords = ["취약", "위험", "775", "vulnerable", "unsafe", "warning",
+        vuln_keywords = ["취약", "위험", "vulnerable", "unsafe", "warning",
                          "주의", "경고", "과도", "excessive"]
-        has_vuln = any(kw in report for kw in vuln_keywords)
 
-        return has_api_keys and has_vuln
+        for line in self.report_content.split("\n"):
+            line_lower = line.lower()
+            if "api_keys" in line_lower or "api-keys" in line_lower:
+                if any(kw in line_lower for kw in vuln_keywords):
+                    return True
+        return False
 
     def _check_log_stats(self) -> bool:
         """로그 통계: CPU 평균값이 36.32% (±0.5) 범위 내인지 확인"""

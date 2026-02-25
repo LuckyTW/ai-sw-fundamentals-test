@@ -4,7 +4,7 @@
 학습자가 CSV 로그를 파싱하여 IP별 접근 횟수, 상태코드 비율,
 느린 엔드포인트를 분석하는 report.txt를 생성하는지 검증.
 
-AI 트랩: 빈 IP 행, 1xx 상태코드, 소수점 response_time, 동점 내림차순 정렬
+AI 트랩: 동점 IP 내림차순 정렬, 1xx 상태코드 미출력, 소수점 response_time
 """
 import os
 import re
@@ -19,8 +19,8 @@ from core.check_item import CheckItem
 # 함정 포함 CSV 데이터 (24행)
 # 함정 1: 빈 IP 행 (행 2)
 # 함정 2: 1xx 상태코드 (행 3)
-# 함정 3: 소수점 응답시간 (행 14)
-# 함정 4: 동점 IP/엔드포인트 내림차순 정렬
+# 함정 3: 소수점 응답시간 (행 7: 33.7)
+# 함정 4: 동점 IP 내림차순 정렬
 TRAP_CSV_HEADER = "timestamp,ip,method,endpoint,status_code,response_time_ms"
 TRAP_CSV_ROWS = [
     ("2025-03-15T09:00:00", "192.168.1.1", "GET", "/api/users", "200", "45"),
@@ -59,8 +59,9 @@ EXPECTED_TOP_IPS = [
     ("10.0.0.99", 3),
 ]
 
-# 상태코드 비율 (총 24행 기준, 빈 IP 행도 포함)
+# 상태코드 비율 (총 24행 기준, 빈 IP 행도 포함, 1xx 포함)
 EXPECTED_STATUS = {
+    "1xx": 4.2,
     "2xx": 70.8,
     "3xx": 4.2,
     "4xx": 8.3,
@@ -128,7 +129,7 @@ class LogAnalyzerValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="csv_parse",
             description="CSV 정상 파싱 + report.txt 생성 확인",
-            points=10,
+            points=15,
             validator=self._check_csv_parse,
             hint="argparse로 --log, --output 인자를 받아 CSV를 파싱하고 report.txt를 생성하세요",
         ))
@@ -139,13 +140,12 @@ class LogAnalyzerValidator(BaseValidator):
             points=15,
             validator=self._check_top_ips,
             hint="빈 IP 행은 제외하고 IP별 접근 횟수를 집계하세요",
-            ai_trap=True,
         ))
 
         self.checklist.add_item(CheckItem(
             id="ip_order",
             description="동점 IP 정렬 순서 (접근 횟수 내림차순, 동점 시 IP 내림차순)",
-            points=15,
+            points=8,
             validator=self._check_ip_order,
             hint="접근 횟수가 같으면 IP 주소도 내림차순으로 정렬하세요",
             ai_trap=True,
@@ -153,17 +153,17 @@ class LogAnalyzerValidator(BaseValidator):
 
         self.checklist.add_item(CheckItem(
             id="status_ratio",
-            description="HTTP 상태코드 그룹별 비율이 정확한지 확인",
-            points=20,
+            description="HTTP 상태코드 그룹별 비율이 정확한지 확인 (1xx 포함)",
+            points=10,
             validator=self._check_status_ratio,
-            hint="1xx 상태코드도 올바르게 분류하고, 전체 행 수 기준으로 비율을 계산하세요",
+            hint="1xx~5xx 모든 그룹을 출력하고, 전체 행 수 기준으로 비율을 계산하세요",
             ai_trap=True,
         ))
 
         self.checklist.add_item(CheckItem(
             id="slow_order",
             description="느린 엔드포인트 TOP 3 순서가 정확한지 확인",
-            points=15,
+            points=20,
             validator=self._check_slow_order,
             hint="엔드포인트별 평균 응답시간을 계산하여 내림차순으로 정렬하세요",
         ))
@@ -171,7 +171,7 @@ class LogAnalyzerValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="report_sections",
             description="리포트에 3개 섹션 (IP 분석, 상태코드, 엔드포인트)이 모두 포함되어 있는지 확인",
-            points=15,
+            points=25,
             validator=self._check_report_sections,
             hint="리포트에 IP 접근 횟수, 상태코드 비율, 느린 엔드포인트 섹션을 모두 포함하세요",
         ))
@@ -179,7 +179,7 @@ class LogAnalyzerValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="slow_values",
             description="엔드포인트 평균 응답시간 수치가 정확한지 확인",
-            points=10,
+            points=7,
             validator=self._check_slow_values,
             hint="소수점 response_time(예: 33.7)도 정확히 처리하여 평균을 계산하세요",
             ai_trap=True,
@@ -198,11 +198,6 @@ class LogAnalyzerValidator(BaseValidator):
             f.write(TRAP_CSV_HEADER + "\n")
             for row in TRAP_CSV_ROWS:
                 f.write(",".join(row) + "\n")
-
-    @staticmethod
-    def _extract_numbers(text: str) -> List[float]:
-        """텍스트에서 숫자(정수/소수) 추출"""
-        return [float(x) for x in re.findall(r"\d+\.?\d*", text)]
 
     # -- 검증 함수 --
 
@@ -243,16 +238,26 @@ class LogAnalyzerValidator(BaseValidator):
         return pos_192_1 < pos_10_5 and pos_192_20 < pos_10_99
 
     def _check_status_ratio(self) -> bool:
-        """HTTP 상태코드 그룹별 비율 확인"""
+        """HTTP 상태코드 그룹별 비율 확인 (1xx 포함, 라인 기반 매칭)
+
+        AI 트랩: AI가 1xx 상태코드를 무시하여 출력에 포함하지 않음.
+        라인 기반 매칭으로 1xx:4.2%와 3xx:4.2%를 구별합니다.
+        """
         if not self.report_content:
             return False
 
         report = self.report_content
+        lines = report.split("\n")
 
-        # 각 비율이 리포트에 포함되어 있는지 확인 (소수점 1자리)
         for group, ratio in EXPECTED_STATUS.items():
             ratio_str = f"{ratio:.1f}"
-            if ratio_str not in report:
+            # 해당 그룹명과 비율이 같은 줄에 있는지 확인
+            found = False
+            for line in lines:
+                if group in line and ratio_str in line:
+                    found = True
+                    break
+            if not found:
                 return False
         return True
 
@@ -287,7 +292,10 @@ class LogAnalyzerValidator(BaseValidator):
         return has_ip_section and has_status_section and has_endpoint_section
 
     def _check_slow_values(self) -> bool:
-        """엔드포인트 평균 응답시간 수치 정확성 확인 (강화: 3개 수치 모두 확인)"""
+        """엔드포인트 평균 응답시간 수치 정확성 확인 (3개 수치 모두 확인)
+
+        AI 트랩: AI가 소수점 response_time(33.7)을 int로 변환하여 평균 오차 발생.
+        """
         if not self.report_content:
             return False
 

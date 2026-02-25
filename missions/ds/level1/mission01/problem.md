@@ -5,7 +5,7 @@
 - 단계: AI·SW 기초
 - 난이도: 1
 - 권장 시간: 15분
-- Pass 기준: 정답 체크리스트 15개 중 70점 이상 충족
+- Pass 기준: 총 100점 중 70점 이상
 
 ### 문제
 
@@ -76,6 +76,16 @@ mini-redis> GET name
 (nil)
 mini-redis> DBSIZE
 (integer) 0
+mini-redis> CONFIG SET maxmemory 3
+OK
+mini-redis> INFO memory
+used_memory:1
+maxmemory:3
+evicted_keys:0
+mini-redis> EXPIRE session 60
+(integer) 1
+mini-redis> TTL session
+(integer) 59
 ```
 
 ### 제출 방식
