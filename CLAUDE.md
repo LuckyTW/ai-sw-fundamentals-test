@@ -286,19 +286,19 @@ CLI (run_grading.py)
 | Validator | 가중치 | CheckItem (총 15개) | 배점 |
 |-----------|--------|---------------------|------|
 | `StructureValidator` | 25 | node_class | 10점 |
-| | | no_builtin_cache | 10점 (**AI 트랩**) |
-| | | linked_list_ops | 5점 |
+| | | no_builtin_cache | 8점 (**AI 트랩**) |
+| | | linked_list_ops | 7점 |
 | `BasicCommandValidator` | 25 | cli_runnable | 3점 |
 | | | set_get | 8점 |
 | | | del_command | 4점 |
 | | | exists_dbsize | 5점 |
 | | | output_format | 5점 (**AI 트랩**) |
 | `LRUValidator` | 30 | config_maxmemory | 5점 |
-| | | lru_eviction | 8점 |
-| | | lru_get_refresh | 10점 (**AI 트랩**) |
+| | | lru_eviction | 11점 |
+| | | lru_get_refresh | 7점 (**AI 트랩**) |
 | | | info_memory | 7점 |
-| `TTLValidator` | 20 | expire_ttl_basic | 6점 |
-| | | ttl_expired_get | 8점 (**AI 트랩**) |
+| `TTLValidator` | 20 | expire_ttl_basic | 8점 |
+| | | ttl_expired_get | 6점 (**AI 트랩**) |
 | | | ttl_nonexistent | 6점 |
 
 **AI 트랩 포인트**:

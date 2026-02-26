@@ -59,7 +59,7 @@ class LRUValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="lru_eviction",
             description="메모리 초과 시 LRU 키가 제거되는지 확인",
-            points=8,
+            points=11,
             validator=self._check_lru_eviction,
             hint="maxmemory 초과 시 가장 오래 접근하지 않은 키부터 제거",
         ))
@@ -67,7 +67,7 @@ class LRUValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="lru_get_refresh",
             description="GET 접근 시 LRU 순서가 갱신되는지 확인",
-            points=10,
+            points=7,
             validator=self._check_lru_get_refresh,
             hint="GET도 접근으로 간주하여 LRU 순서를 갱신해야 합니다 (move_to_front)",
             ai_trap=True,

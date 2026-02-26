@@ -61,7 +61,7 @@ class TTLValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="expire_ttl_basic",
             description="EXPIRE/TTL 기본 동작 (TTL 설정 + 남은 시간 조회)",
-            points=6,
+            points=8,
             validator=self._check_expire_ttl_basic,
             hint="EXPIRE key seconds → (integer) 1, TTL key → (integer) 남은초",
         ))
@@ -69,7 +69,7 @@ class TTLValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="ttl_expired_get",
             description="만료 키 GET → (nil) + DBSIZE 감소 (lazy deletion)",
-            points=8,
+            points=6,
             validator=self._check_ttl_expired_get,
             hint="GET 시 TTL 만료 확인 → 키 삭제 + (nil) 반환",
             ai_trap=True,
