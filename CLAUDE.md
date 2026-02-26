@@ -46,6 +46,12 @@ python3 scripts/run_grading.py --student-id <학생ID> --mission-id algo_level2_
 
 # 샘플 정답 코드로 Algo mission01 채점 (테스트용)
 python3 scripts/run_grading.py --student-id sample --mission-id algo_level2_mission01 --submission-dir sample_submission_algo
+
+# 데이터베이스 미션 채점 (--submission-dir 필수)
+python3 scripts/run_grading.py --student-id <학생ID> --mission-id db_level3_mission01 --submission-dir /path/to/submission
+
+# 샘플 정답 코드로 DB mission01 채점 (테스트용)
+python3 scripts/run_grading.py --student-id sample --mission-id db_level3_mission01 --submission-dir sample_submission_db
 ```
 
 테스트 디렉토리(`tests/`)는 존재하나 아직 구현된 테스트 없음.
@@ -88,12 +94,17 @@ linux-test/
 │   │   ├── basic_command_validator.py  #     subprocess형 (SET/GET/DEL/EXISTS/DBSIZE)
 │   │   ├── lru_validator.py            #     subprocess형 (LRU 제거, GET 갱신, INFO)
 │   │   └── ttl_validator.py            #     Popen형 (EXPIRE/TTL, lazy deletion)
-│   └── algo/validators/                #   알고리즘 미션용 (4개 + 헬퍼)
-│       ├── _helpers.py                 #     공통 유틸 (generate_hash, parse_responses)
-│       ├── structure_validator.py      #     AST 분석형 (Commit 클래스, 금지 sort, dict 저장소)
-│       ├── basic_command_validator.py  #     subprocess형 (INIT/COMMIT/BRANCH/SWITCH)
-│       ├── graph_algorithm_validator.py #    subprocess형 (PATH/ANCESTORS/LOG, 독립 세션)
-│       └── search_sort_validator.py    #     subprocess형 (SEARCH/LOG --sort-by)
+│   ├── algo/validators/                #   알고리즘 미션용 (4개 + 헬퍼)
+│   │   ├── _helpers.py                 #     공통 유틸 (generate_hash, parse_responses)
+│   │   ├── structure_validator.py      #     AST 분석형 (Commit 클래스, 금지 sort, dict 저장소)
+│   │   ├── basic_command_validator.py  #     subprocess형 (INIT/COMMIT/BRANCH/SWITCH)
+│   │   ├── graph_algorithm_validator.py #    subprocess형 (PATH/ANCESTORS/LOG, 독립 세션)
+│   │   └── search_sort_validator.py    #     subprocess형 (SEARCH/LOG --sort-by)
+│   └── db/validators/                  #   데이터베이스 미션용 (3개 + 데이터)
+│       ├── _data.py                    #     CSV 데이터 상수 + write_csv_files() 헬퍼
+│       ├── schema_validator.py         #     DB 스키마 검증 (테이블/FK/인덱스/데이터)
+│       ├── analysis_validator.py       #     리포트 분석 섹션 검증 (라인 매칭)
+│       └── report_validator.py         #     리포트 형식/요약 검증
 │
 ├── missions/                           # 미션 정의 (config.yaml + problem.md + solution.md)
 │   ├── linux/
@@ -107,9 +118,12 @@ linux-test/
 │   ├── ds/
 │   │   └── level1/mission01/           #   Mini LRU 캐시 구현 시험
 │   │       └── template/              #     lru_cache.py, cli.py
-│   └── algo/
-│       └── level2/mission01/           #   Mini Git 커밋 그래프 시뮬레이터
-│           └── template/              #     mini_git.py, cli.py
+│   ├── algo/
+│   │   └── level2/mission01/           #   Mini Git 커밋 그래프 시뮬레이터
+│   │       └── template/              #     mini_git.py, cli.py
+│   └── db/
+│       └── level3/mission01/           #   커밋 이력 DB 분석기
+│           └── template/              #     commit_analyzer.py
 │
 ├── sample_submission/                  # python_level1_mission01 정답 예시 코드
 │   ├── models.py                       #   @dataclass Book
@@ -130,6 +144,9 @@ linux-test/
 ├── sample_submission_algo/             # algo_level2_mission01 정답 예시 코드
 │   ├── mini_git.py                     #   Commit + CommitGraph + InvertedIndex + merge_sort + BFS
 │   └── cli.py                          #   Git 스타일 REPL CLI
+│
+├── sample_submission_db/               # db_level3_mission01 정답 예시 코드
+│   └── commit_analyzer.py              #   SQLite DB 생성 + CSV 로드 + SQL 분석 + 리포트
 │
 ├── results/                            # 채점 결과 출력 디렉토리
 ├── submissions/                        # 학생 제출물 보관 (빈 디렉토리)
@@ -357,6 +374,53 @@ CLI (run_grading.py)
 
 ---
 
+### db_level3_mission01 — 커밋 이력 DB 분석기
+
+- **제한시간**: 2400초 (40분) | **합격**: 70점
+- **실행 환경**: macOS/Linux 모두 가능 (subprocess + tmpdir 기반)
+- **제출물**: `commit_analyzer.py` (1개 파일)
+- **정답 예시**: `sample_submission_db/` 디렉토리
+
+| Validator | 가중치 | CheckItem (총 19개) | 배점 |
+|-----------|--------|---------------------|------|
+| `SchemaValidator` | 20 | db_created | 4점 |
+| | | foreign_keys | 4점 |
+| | | root_commit_null | 5점 (**AI 트랩**) |
+| | | data_loaded | 4점 |
+| | | index_exists | 3점 |
+| `AnalysisValidator` | 45 | author_commit_count | 5점 |
+| | | author_left_join | 8점 (**AI 트랩**) |
+| | | branch_commit_count | 5점 |
+| | | branch_no_commits | 6점 (**AI 트랩**) |
+| | | distinct_file_count | 6점 (**AI 트랩**) |
+| | | most_changed_files | 6점 |
+| | | self_join_parent | 8점 (**AI 트랩**) |
+| | | history_count | 2점 |
+| `ReportValidator` | 35 | report_created | 3점 |
+| | | report_sections | 4점 |
+| | | top_author | 7점 |
+| | | commit_total | 6점 |
+| | | summary_stats | 8점 |
+| | | file_ranking_order | 7점 |
+
+**AI 트랩 포인트** (5개, 합계 33점):
+- `root_commit_null`: parent_hash를 NOT NULL로 정의 → root commit INSERT 실패
+- `author_left_join`: INNER JOIN으로 커밋 없는 작성자(황서진) 제외
+- `branch_no_commits`: INNER JOIN으로 커밋 없는 브랜치(hotfix/urgent) 제외
+- `distinct_file_count`: COUNT(*)로 중복 파일을 별도 카운트 → COUNT(DISTINCT file_path) 필요
+- `self_join_parent`: INNER JOIN self-reference → parent=NULL인 root commit 제외
+
+**미션 융합 매핑**:
+- **DB 미션** (핵심): 4테이블 스키마, PK/FK, JOIN, GROUP BY, 서브쿼리, 인덱스
+- **Algo M1** (Mini Git): 커밋 그래프 DAG, 브랜치, self-referencing FK
+- **Python M2** (로그 분석): CSV 파싱, 집계, Top-N, 텍스트 리포트
+
+**Validator 패턴 분류**:
+- DB 쿼리형: `SchemaValidator` — sqlite3 직접 연결하여 메타데이터 쿼리
+- 라인 매칭형: `AnalysisValidator`, `ReportValidator` — subprocess 실행 후 리포트 파일 라인 매칭
+
+---
+
 ## 시험 문제 출제 가이드 (코디세이 시험 가이드 v1.1 기반)
 
 > 새 미션 문제를 제작할 때 반드시 아래 원칙과 템플릿을 따라야 한다.
@@ -548,7 +612,7 @@ ai_traps:
 - **AI 트랩**: `CheckItem`의 `ai_trap=True` 플래그로 AI가 흔히 틀리는 항목 표시
 - **subprocess 호출**: 5~10초 타임아웃 적용
 - **리눅스 level2 미션 검증은 macOS/Linux 모두 가능** (Python 파일 제출 → subprocess + tmpdir 기반)
-- **Python/DS/Algo 미션 검증은 macOS/Linux 모두 가능** (subprocess + tmpdir 기반)
+- **Python/DS/Algo/DB 미션 검증은 macOS/Linux 모두 가능** (subprocess + tmpdir 기반)
 
 ---
 
@@ -558,11 +622,11 @@ ai_traps:
 
 | 구분 | 수치 |
 |------|------|
-| 총 미션 수 | 5개 (Linux 1, Python 2, DS 1, Algo 1) |
-| 총 Validator 클래스 | 14개 (Linux 1, Python 5, DS 4, Algo 4) |
-| 총 CheckItem 수 | 62개 (Linux level2 7, Python mission01 17 + mission02 7, DS mission01 15, Algo level2 16) |
-| 총 AI 트랩 항목 | 19개 (Linux level2 4, Python mission01 4 + mission02 3, DS mission01 4, Algo level2 4) |
-| 정답 예시 코드 | `sample_submission/` (Python mission01), `sample_submission_python02/` (Python mission02), `sample_submission_linux/` (Linux level2), `sample_submission_ds/` (DS mission01), `sample_submission_algo/` (Algo level2 mission01) |
+| 총 미션 수 | 6개 (Linux 1, Python 2, DS 1, Algo 1, DB 1) |
+| 총 Validator 클래스 | 17개 (Linux 1, Python 5, DS 4, Algo 4, DB 3) |
+| 총 CheckItem 수 | 81개 (Linux level2 7, Python mission01 17 + mission02 7, DS mission01 15, Algo level2 16, DB level3 19) |
+| 총 AI 트랩 항목 | 24개 (Linux level2 4, Python mission01 4 + mission02 3, DS mission01 4, Algo level2 4, DB level3 5) |
+| 정답 예시 코드 | `sample_submission/` (Python mission01), `sample_submission_python02/` (Python mission02), `sample_submission_linux/` (Linux level2), `sample_submission_ds/` (DS mission01), `sample_submission_algo/` (Algo level2 mission01), `sample_submission_db/` (DB level3 mission01) |
 
 ### 미구현 / 향후 작업
 

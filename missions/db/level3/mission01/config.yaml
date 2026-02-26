@@ -1,0 +1,49 @@
+# 미션 메타데이터
+name: "커밋 이력 DB 분석기"
+description: "CSV 커밋 데이터를 SQLite DB로 적재하고, SQL 쿼리로 분석하여 텍스트 리포트를 생성하는 능력을 검증"
+level: 3
+category: "db"
+time_limit: 2400  # 40분 (초 단위)
+passing_score: 70
+
+# 사용할 검증기 목록 (총 100점)
+validators:
+  - module: "plugins.db.validators.schema_validator"
+    class: "SchemaValidator"
+    weight: 20
+
+  - module: "plugins.db.validators.analysis_validator"
+    class: "AnalysisValidator"
+    weight: 45
+
+  - module: "plugins.db.validators.report_validator"
+    class: "ReportValidator"
+    weight: 35
+
+# 실행 환경 설정
+execution:
+  timeout: 300
+  sandbox: false
+  working_directory: null  # submission_dir 사용
+
+# AI 함정 요소 정리 (5개)
+ai_traps:
+  - item: "root_commit_null"
+    trap_description: "AI가 모든 FK를 NOT NULL로 정의하여 root commit INSERT 실패"
+    correct_answer: "parent_hash는 NULL 허용 (root commit은 부모 없음)"
+
+  - item: "author_left_join"
+    trap_description: "AI가 INNER JOIN으로 커밋 없는 작성자(황서진) 제외"
+    correct_answer: "LEFT JOIN으로 0-commit 작성자도 포함"
+
+  - item: "branch_no_commits"
+    trap_description: "AI가 INNER JOIN으로 커밋 없는 브랜치(hotfix/urgent) 제외"
+    correct_answer: "LEFT JOIN으로 0-commit 브랜치도 포함"
+
+  - item: "distinct_file_count"
+    trap_description: "AI가 COUNT(*)로 중복 파일을 별도 카운트"
+    correct_answer: "COUNT(DISTINCT file_path)로 고유 파일 수 산출"
+
+  - item: "self_join_parent"
+    trap_description: "AI가 INNER JOIN self-reference로 parent=NULL인 root commit 제외"
+    correct_answer: "Recursive CTE 또는 LEFT JOIN으로 root commit 포함"
