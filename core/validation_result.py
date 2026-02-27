@@ -19,11 +19,13 @@ class ValidationResult:
         self.overall_passed = False
         self.overall_score = 0.0
 
-    def add_result(self, validator_name: str, result: Dict[str, Any]) -> None:
+    def add_result(self, validator_name: str, result: Dict[str, Any],
+                   weight: float = 0) -> None:
         """검증기 결과 추가"""
         self.results.append({
             "validator": validator_name,
-            "result": result
+            "result": result,
+            "weight": weight,
         })
 
     def finalize(self) -> None:
@@ -36,9 +38,16 @@ class ValidationResult:
         # 모든 검증기가 통과해야 최종 합격
         self.overall_passed = all(r["result"].get("is_passed", False) for r in self.results)
 
-        # 평균 점수 계산
-        total_score = sum(r["result"].get("score", 0) for r in self.results)
-        self.overall_score = total_score / len(self.results)
+        # 가중 평균 점수 계산 (weight가 설정되어 있으면 사용, 없으면 단순 평균)
+        total_weight = sum(r.get("weight", 0) for r in self.results)
+        if total_weight > 0:
+            self.overall_score = sum(
+                r["result"].get("score", 0) * r.get("weight", 0)
+                for r in self.results
+            ) / total_weight
+        else:
+            total_score = sum(r["result"].get("score", 0) for r in self.results)
+            self.overall_score = total_score / len(self.results)
 
     def to_json(self) -> str:
         """JSON 형식으로 변환"""

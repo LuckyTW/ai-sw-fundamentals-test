@@ -59,19 +59,25 @@ class Grader:
         """
         validators = self.load_validators()
 
+        # validator별 weight 매핑 (config에서 로드)
+        weight_map = {}
+        for vc in self.config.get("validators", []):
+            weight_map[vc["class"]] = vc.get("weight", 0)
+
         for validator in validators:
             validator_name = validator.__class__.__name__
+            weight = weight_map.get(validator_name, 0)
 
             try:
                 result = validator.validate()
-                self.result.add_result(validator_name, result)
+                self.result.add_result(validator_name, result, weight=weight)
             except Exception as e:
                 # 검증기 실행 중 오류 발생 시 기록
                 self.result.add_result(validator_name, {
                     "error": f"검증기 실행 실패: {str(e)}",
                     "is_passed": False,
                     "score": 0
-                })
+                }, weight=weight)
 
         self.result.finalize()
         return self.result

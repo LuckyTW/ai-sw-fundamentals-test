@@ -47,6 +47,11 @@ class PersistenceValidator(BaseValidator):
         py_files = collect_py_files(self.submission_dir)
         self.parsed_trees = parse_all_files(py_files)
 
+        # 미리 save를 실행하여 format/integrity가 roundtrip과 독립 동작하도록 함
+        books = self._make_test_books()
+        if books is not None:
+            self.saved_file = self._do_save(books)
+
     def build_checklist(self) -> None:
         self.checklist.add_item(CheckItem(
             id="persist_roundtrip",
@@ -160,13 +165,12 @@ class PersistenceValidator(BaseValidator):
     # -- 검증 함수 --
 
     def _check_roundtrip(self) -> bool:
-        """save → load 왕복 무결성 확인"""
-        books = self._make_test_books()
-        if books is None:
+        """save → load 왕복 무결성 확인 (save는 setup에서 실행 완료)"""
+        if self.saved_file is None:
             return False
 
-        self.saved_file = self._do_save(books)
-        if self.saved_file is None:
+        books = self._make_test_books()
+        if books is None:
             return False
 
         loaded = self._do_load(self.saved_file)

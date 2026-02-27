@@ -38,6 +38,8 @@
 
 **트랩 합계**: 33점. 채점은 Validator별 독립 Pass(70% 이상) + 전체 AND 방식. AnalysisValidator(45점) 내 트랩이 28점(62%)을 차지하므로 최소 3개 이상의 트랩을 수정해야 AnalysisValidator를 Pass하여 전체 합격 가능.
 
+**알려진 제한**: `self_join_parent` 트랩(8점)은 AI가 INNER JOIN self-reference를 사용할 때 작동하나, Recursive CTE를 사용하면 root commit까지 자동으로 도달하여 트랩이 무력화됩니다. 현재 검증은 결과 기반(History 섹션에 root hash 존재 여부)이므로 CTE 사용 자체를 감점하지 않습니다. 향후 SQL AST 분석이나 쿼리 패턴 검증으로 트랩을 강화할 수 있습니다.
+
 ### 핵심 SQL 쿼리
 
 #### 작성자별 기여 (LEFT JOIN + COUNT DISTINCT)

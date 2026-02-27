@@ -199,6 +199,42 @@ class LogAnalyzerValidator(BaseValidator):
             for row in TRAP_CSV_ROWS:
                 f.write(",".join(row) + "\n")
 
+    # -- 섹션 추출 헬퍼 --
+
+    def _extract_section(self, keywords: List[str]) -> Optional[str]:
+        """리포트에서 특정 키워드를 포함하는 섹션을 추출.
+
+        섹션 구분: 빈 줄 2개 연속, 또는 '===' / '---' 라인, 또는 다른 섹션 키워드.
+        해당 키워드를 포함하는 헤더 라인부터 다음 섹션 시작 전까지 반환.
+        """
+        if not self.report_content:
+            return None
+
+        lines = self.report_content.split("\n")
+        section_start = -1
+
+        # 키워드를 포함하는 라인 찾기
+        for i, line in enumerate(lines):
+            line_lower = line.lower()
+            if any(kw.lower() in line_lower for kw in keywords):
+                section_start = i
+                break
+
+        if section_start == -1:
+            return None
+
+        # 섹션 끝 찾기 (다음 구분자 또는 다른 섹션 헤더)
+        section_lines = [lines[section_start]]
+        for i in range(section_start + 1, len(lines)):
+            line = lines[i]
+            # 다른 섹션의 구분자
+            if line.startswith("===") or line.startswith("---"):
+                break
+            # 다른 섹션의 헤더 (# 또는 숫자. 패턴이 아닌 섹션 키워드)
+            section_lines.append(line)
+
+        return "\n".join(section_lines)
+
     # -- 검증 함수 --
 
     def _check_csv_parse(self) -> bool:
@@ -206,16 +242,18 @@ class LogAnalyzerValidator(BaseValidator):
         return self.report_content is not None and len(self.report_content.strip()) > 0
 
     def _check_top_ips(self) -> bool:
-        """IP별 접근 횟수 TOP 5 값 확인 (순서 무관, 값만 확인)"""
+        """IP별 접근 횟수 TOP 5 값 확인 (IP와 count가 같은 라인에 존재)"""
         if not self.report_content:
             return False
 
-        report = self.report_content
-        # 상위 5개 IP와 횟수가 모두 리포트에 존재하는지 확인
+        lines = self.report_content.split("\n")
         for ip, count in EXPECTED_TOP_IPS:
-            if ip not in report:
-                return False
-            if str(count) not in report:
+            found = False
+            for line in lines:
+                if ip in line and str(count) in line:
+                    found = True
+                    break
+            if not found:
                 return False
         return True
 
@@ -262,14 +300,17 @@ class LogAnalyzerValidator(BaseValidator):
         return True
 
     def _check_slow_order(self) -> bool:
-        """느린 엔드포인트 TOP 3 순서 확인"""
+        """느린 엔드포인트 TOP 3 순서 확인 (엔드포인트 섹션 내에서만 검색)"""
         if not self.report_content:
             return False
 
-        report = self.report_content
+        # 엔드포인트 섹션만 추출하여 오탐 방지
+        section = self._extract_section(["endpoint", "엔드포인트", "slow", "response"])
+        search_text = section if section else self.report_content
+
         positions = []
         for endpoint, _ in EXPECTED_SLOW_ENDPOINTS:
-            pos = report.find(endpoint)
+            pos = search_text.find(endpoint)
             if pos == -1:
                 return False
             positions.append(pos)

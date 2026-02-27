@@ -53,17 +53,20 @@ class GraphAlgorithmValidator(BaseValidator):
             self.cli_path = cli_file
 
         # 세션 A: 선형 체인 (path_same_branch 독립 테스트)
+        # PATH p3 p1: 부모 방향 BFS로 p3→p2→p1 탐색 가능 (트랩4 연쇄 방지)
         linear_commands = (
             'INIT Alice\n'
             'COMMIT "Init"\n'
             'COMMIT "Second"\n'
             'COMMIT "Third"\n'
-            f'PATH {self._p1} {self._p3}\n'
+            f'PATH {self._p3} {self._p1}\n'
             'exit\n'
         )
         self._linear_responses = self._run_repl(linear_commands)
 
         # 세션 B: 브랜치 분기 (나머지 테스트)
+        # LOG를 COMMIT c5 전에 배치하여 트랩2(선형 체인화)가 트랩3(LOG)을 상쇄하지 않도록 함
+        # LOG 시점: c1,c2(main) + c3,c4(feature) = 4커밋. main HEAD=c2에서 부모 탐색 시 c3,c4 미도달
         branch_commands = (
             'INIT Alice\n'
             'COMMIT "Initial commit"\n'
@@ -73,9 +76,9 @@ class GraphAlgorithmValidator(BaseValidator):
             'COMMIT "Add login page"\n'
             'COMMIT "Add dashboard"\n'
             'SWITCH main\n'
+            'LOG\n'
             'COMMIT "Add payment"\n'
             f'ANCESTORS {self._c5}\n'
-            'LOG\n'
             f'PATH {self._c4} {self._c5}\n'
             f'ANCESTORS {self._c4}\n'
             'exit\n'
@@ -155,11 +158,11 @@ class GraphAlgorithmValidator(BaseValidator):
 
         AI 실수: c5의 부모를 c4로 설정하면 조상이 c4, c3, c2, c1 (4개)
         """
-        if not self._branch_responses or len(self._branch_responses) < 10:
+        if not self._branch_responses or len(self._branch_responses) < 11:
             return False
 
-        # responses[9] = ANCESTORS c5
-        ancestors_resp = self._branch_responses[9]
+        # responses[10] = ANCESTORS c5 (LOG가 [8]로 이동하여 인덱스 +1)
+        ancestors_resp = self._branch_responses[10]
 
         # c2, c1이 조상에 포함되어야 함
         has_c2 = self._c2 in ancestors_resp
@@ -172,27 +175,28 @@ class GraphAlgorithmValidator(BaseValidator):
         return has_c2 and has_c1 and not has_c3 and not has_c4
 
     def _check_log_all(self) -> bool:
-        """세션 B: LOG → 5개 커밋 모두 출력 (feature 브랜치 포함)
+        """세션 B: LOG → 4개 커밋 모두 출력 (feature 브랜치 포함)
 
+        LOG는 COMMIT c5 전에 실행되므로 c1,c2(main) + c3,c4(feature) = 4개.
         AI 실수: HEAD(main) 도달 가능 커밋만 출력 → c3, c4 누락
+        독립 타이밍: commit_parent 트랩(선형 체인화)이 LOG 결과를 상쇄하지 않음
         """
-        if not self._branch_responses or len(self._branch_responses) < 11:
+        if not self._branch_responses or len(self._branch_responses) < 9:
             return False
 
-        # responses[10] = LOG (전체 커밋 출력)
-        log_resp = self._branch_responses[10]
+        # responses[8] = LOG (COMMIT c5 전, 4개 커밋만 존재)
+        log_resp = self._branch_responses[8]
 
-        # 5개 커밋 해시가 모두 존재해야 함
+        # 4개 커밋 해시가 모두 존재해야 함 (c5는 아직 미생성)
         return (self._c1 in log_resp
                 and self._c2 in log_resp
                 and self._c3 in log_resp
-                and self._c4 in log_resp
-                and self._c5 in log_resp)
+                and self._c4 in log_resp)
 
     def _check_path_same_branch(self) -> bool:
-        """세션 A (독립): PATH p1 p3 → 경로에 p1, p2, p3 모두 포함
+        """세션 A (독립): PATH p3 p1 → 경로에 p1, p2, p3 모두 포함
 
-        선형 체인 p1→p2→p3에서 최단 경로 = p1→p2→p3
+        선형 체인 p1→p2→p3에서 부모 방향 BFS로 p3→p2→p1 탐색 가능
         """
         if not self._linear_responses or len(self._linear_responses) < 4:
             return False
