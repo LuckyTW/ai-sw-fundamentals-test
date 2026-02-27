@@ -7,8 +7,10 @@ cli.py 존재 → --help → add → list → 크래시 안전성 순서로 체�
 AI 트랩: --help 옵션 누락
 """
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 from typing import Dict, Any, Optional
 
 from core.base_validator import BaseValidator
@@ -22,12 +24,21 @@ class CLIValidator(BaseValidator):
         super().__init__(mission_config)
         self.submission_dir = ""
         self.cli_path: Optional[str] = None
+        self._tmpdir: Optional[tempfile.TemporaryDirectory] = None
+        self._work_dir: Optional[str] = None
 
     def setup(self) -> None:
         self.submission_dir = self.config.get("submission_dir", "")
         cli_file = os.path.join(self.submission_dir, "cli.py")
         if os.path.isfile(cli_file):
-            self.cli_path = cli_file
+            # tmpdir에 학생 코드를 복사하여 submission_dir 오염 방지
+            self._tmpdir = tempfile.TemporaryDirectory()
+            self._work_dir = self._tmpdir.name
+            for f in os.listdir(self.submission_dir):
+                src = os.path.join(self.submission_dir, f)
+                if os.path.isfile(src) and f.endswith(".py"):
+                    shutil.copy2(src, self._work_dir)
+            self.cli_path = os.path.join(self._work_dir, "cli.py")
 
     def build_checklist(self) -> None:
         self.checklist.add_item(CheckItem(
@@ -72,7 +83,9 @@ class CLIValidator(BaseValidator):
         ))
 
     def teardown(self) -> None:
-        pass
+        if self._tmpdir:
+            self._tmpdir.cleanup()
+            self._tmpdir = None
 
     # -- subprocess 실행 헬퍼 --
 
@@ -86,7 +99,7 @@ class CLIValidator(BaseValidator):
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=self.submission_dir,
+                cwd=self._work_dir or self.submission_dir,
             )
         except (subprocess.TimeoutExpired, OSError):
             return None
@@ -164,12 +177,16 @@ class CLIValidator(BaseValidator):
         patterns = ["*.jsonl", "*.json", "*.csv"]
         found = []
         for pattern in patterns:
-            found.extend(glob.glob(os.path.join(self.submission_dir, pattern)))
+            search_dir = self._work_dir or self.submission_dir
+        found.extend(glob.glob(os.path.join(search_dir, pattern)))
         return found
 
     @staticmethod
     def _any_file_changed(before: set, after: set) -> bool:
-        """기존 파일 중 크기가 변한 것이 있는지"""
+        """새 파일이 생기거나 기존 파일 크기가 변한 것이 있는지"""
+        new_files = after - before
+        if new_files:
+            return True
         for f in before & after:
             try:
                 if os.path.getsize(f) > 0:

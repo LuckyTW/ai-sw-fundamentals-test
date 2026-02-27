@@ -38,7 +38,7 @@ class PatternValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="pattern_yield",
             description="search_books가 yield 제너레이터로 구현되어 있는지 확인",
-            points=8,
+            points=7,
             validator=self._check_yield,
             hint="search_books 함수에서 yield를 사용하여 결과를 반환하세요 (리스트가 아닌 제너레이터)",
             ai_trap=True,
@@ -55,7 +55,7 @@ class PatternValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="pattern_type_hints",
             description="3개 이상의 함수에 타입 힌트가 적용되어 있는지 확인",
-            points=5,
+            points=6,
             validator=self._check_type_hints,
             hint="함수 매개변수나 반환값에 타입 힌트를 추가하세요",
         ))

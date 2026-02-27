@@ -158,16 +158,16 @@ class TTLValidator(BaseValidator):
         # responses[2] = TTL session → "(integer) 98~100"
 
         expire_resp = self._basic_responses[1].strip()
-        if "(integer) 1" not in expire_resp:
+        expire_val = _extract_integer(expire_resp)
+        if expire_val != 1:
             return False
 
         ttl_resp = self._basic_responses[2].strip()
-        # "(integer) N" 에서 N 추출
         ttl_val = _extract_integer(ttl_resp)
         if ttl_val is None:
             return False
 
-        # 98~100 범위 (실행 시간 오차 감안)
+        # 90~100 범위 (실행 시간 오차 감안)
         return 90 <= ttl_val <= 100
 
     def _check_ttl_expired_get(self) -> bool:
@@ -185,8 +185,8 @@ class TTLValidator(BaseValidator):
         get_resp = self._lazy_responses[3].strip()
         dbsize_resp = self._lazy_responses[4].strip()
 
-        get_nil = "(nil)" in get_resp
-        dbsize_zero = "(integer) 0" in dbsize_resp
+        get_nil = _is_nil_response(get_resp)
+        dbsize_zero = _extract_integer(dbsize_resp) == 0
 
         return get_nil and dbsize_zero
 
@@ -202,7 +202,7 @@ class TTLValidator(BaseValidator):
         ttl_nonexist = self._edge_responses[0].strip()
         ttl_noexpire = self._edge_responses[2].strip()
 
-        return "(integer) -2" in ttl_nonexist and "(integer) -1" in ttl_noexpire
+        return _extract_integer(ttl_nonexist) == -2 and _extract_integer(ttl_noexpire) == -1
 
 
 def _parse_responses(stdout: str) -> List[str]:
@@ -229,12 +229,20 @@ def _parse_responses(stdout: str) -> List[str]:
     return responses
 
 
+def _is_nil_response(response: str) -> bool:
+    """(nil) 또는 None을 nil 응답으로 인식"""
+    return response.strip().lower() in ("(nil)", "none", "nil", "null")
+
+
 def _extract_integer(response: str) -> Optional[int]:
-    """'(integer) N' 형식에서 N 추출"""
+    """'(integer) N' 또는 'N' 형식에서 정수 추출"""
     response = response.strip()
     if response.startswith("(integer)"):
         try:
             return int(response.split("(integer)")[1].strip())
         except (ValueError, IndexError):
             return None
-    return None
+    try:
+        return int(response)
+    except ValueError:
+        return None

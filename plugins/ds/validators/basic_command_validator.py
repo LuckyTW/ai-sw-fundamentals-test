@@ -147,34 +147,33 @@ class BasicCommandValidator(BaseValidator):
         )
 
     def _check_del(self) -> bool:
-        """DEL name → (integer) 1, GET name → (nil)"""
+        """DEL name → 1 반환, GET name → nil 응답"""
         if not self._responses or len(self._responses) < 6:
             return False
 
-        # responses[4] = DEL name → "(integer) 1"
-        # responses[5] = GET name → "(nil)"
+        # responses[4] = DEL name → "(integer) 1" 또는 "1"
+        # responses[5] = GET name → "(nil)" 또는 "None"
         del_resp = self._responses[4].strip()
         get_resp = self._responses[5].strip()
 
-        return "(integer) 1" in del_resp and "(nil)" in get_resp
+        del_ok = _extract_int_value(del_resp) == 1
+        get_nil = _is_nil_response(get_resp)
+
+        return del_ok and get_nil
 
     def _check_exists_dbsize(self) -> bool:
-        """EXISTS name → (integer) 0, EXISTS count → (integer) 1, DBSIZE → (integer) 1"""
+        """EXISTS name → 0, EXISTS count → 1, DBSIZE → 1"""
         if not self._responses or len(self._responses) < 9:
             return False
 
-        # responses[6] = EXISTS name → "(integer) 0"
-        # responses[7] = EXISTS count → "(integer) 1"
-        # responses[8] = DBSIZE → "(integer) 1"
-        exists_name = self._responses[6].strip()
-        exists_count = self._responses[7].strip()
-        dbsize = self._responses[8].strip()
+        # responses[6] = EXISTS name → "(integer) 0" 또는 "0"
+        # responses[7] = EXISTS count → "(integer) 1" 또는 "1"
+        # responses[8] = DBSIZE → "(integer) 1" 또는 "1"
+        exists_name = _extract_int_value(self._responses[6].strip())
+        exists_count = _extract_int_value(self._responses[7].strip())
+        dbsize = _extract_int_value(self._responses[8].strip())
 
-        return (
-            "(integer) 0" in exists_name
-            and "(integer) 1" in exists_count
-            and "(integer) 1" in dbsize
-        )
+        return exists_name == 0 and exists_count == 1 and dbsize == 1
 
     def _check_output_format(self) -> bool:
         """Redis 출력 형식 검증:
@@ -206,6 +205,25 @@ class BasicCommandValidator(BaseValidator):
             return False
 
         return True
+
+
+def _extract_int_value(response: str) -> Optional[int]:
+    """'(integer) N' 또는 'N' 형식에서 정수 추출"""
+    response = response.strip()
+    if response.startswith("(integer)"):
+        try:
+            return int(response.split("(integer)")[1].strip())
+        except (ValueError, IndexError):
+            return None
+    try:
+        return int(response)
+    except ValueError:
+        return None
+
+
+def _is_nil_response(response: str) -> bool:
+    """(nil) 또는 None을 nil 응답으로 인식"""
+    return response.strip().lower() in ("(nil)", "none", "nil", "null")
 
 
 def _parse_responses(stdout: str) -> List[str]:

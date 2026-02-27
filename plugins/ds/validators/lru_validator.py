@@ -121,9 +121,9 @@ class LRUValidator(BaseValidator):
         if not self._lru_responses or len(self._lru_responses) < 11:
             return False
 
-        # responses[10] = DBSIZE → "(integer) 3"
+        # responses[10] = DBSIZE → "(integer) 3" 또는 "3"
         dbsize_resp = self._lru_responses[10].strip()
-        return "(integer) 3" in dbsize_resp
+        return _extract_int_value(dbsize_resp) == 3
 
     def _check_lru_get_refresh(self) -> bool:
         """GET k1 후 SET k4 → k2가 제거되어야 함 (k1이 아님)
@@ -144,7 +144,7 @@ class LRUValidator(BaseValidator):
         get_k2 = self._lru_responses[6].strip()
         get_k1 = self._lru_responses[7].strip()
 
-        k2_removed = "(nil)" in get_k2
+        k2_removed = _is_nil_response(get_k2)
         k1_alive = "v1" in get_k1
 
         return k2_removed and k1_alive
@@ -161,6 +161,25 @@ class LRUValidator(BaseValidator):
         has_evicted = "evicted_keys:1" in info_resp
 
         return has_used and has_max and has_evicted
+
+
+def _extract_int_value(response: str) -> Optional[int]:
+    """'(integer) N' 또는 'N' 형식에서 정수 추출"""
+    response = response.strip()
+    if response.startswith("(integer)"):
+        try:
+            return int(response.split("(integer)")[1].strip())
+        except (ValueError, IndexError):
+            return None
+    try:
+        return int(response)
+    except ValueError:
+        return None
+
+
+def _is_nil_response(response: str) -> bool:
+    """(nil) 또는 None을 nil 응답으로 인식"""
+    return response.strip().lower() in ("(nil)", "none", "nil", "null")
 
 
 def _parse_responses(stdout: str) -> List[str]:

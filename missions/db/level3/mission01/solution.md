@@ -36,7 +36,7 @@
 | `distinct_file_count` | COUNT(*)로 중복 파일을 별도 카운트 | COUNT(DISTINCT file_path)로 고유 파일 수 | 6 |
 | `self_join_parent` | INNER JOIN self-reference → parent=NULL인 root 제외 | Recursive CTE 또는 LEFT JOIN으로 root 포함 | 8 |
 
-**트랩 합계**: 33점 → 전부 걸리면 67점 (Fail), 1개만 수정하면 72점 이상 (Pass)
+**트랩 합계**: 33점. 채점은 Validator별 독립 Pass(70% 이상) + 전체 AND 방식. AnalysisValidator(45점) 내 트랩이 28점(62%)을 차지하므로 최소 3개 이상의 트랩을 수정해야 AnalysisValidator를 Pass하여 전체 합격 가능.
 
 ### 핵심 SQL 쿼리
 

@@ -34,7 +34,7 @@ class StructureValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="node_class",
             description="Node 클래스에 prev/next/key/value 속성이 존재하는지 확인",
-            points=10,
+            points=11,
             validator=self._check_node_class,
             hint="Node 클래스에 prev, next, key, value 속성을 정의하세요",
         ))
@@ -42,7 +42,7 @@ class StructureValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="no_builtin_cache",
             description="OrderedDict/deque/functools.lru_cache를 사용하지 않는지 확인",
-            points=8,
+            points=7,
             validator=self._check_no_builtin_cache,
             hint="OrderedDict, deque, functools.lru_cache 대신 Node 클래스로 직접 구현하세요",
             ai_trap=True,

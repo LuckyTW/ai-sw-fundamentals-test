@@ -250,7 +250,7 @@ class LinuxAuditorValidator(BaseValidator):
 
         for line in self.report_content.split("\n"):
             line_lower = line.lower()
-            if "23" in line_lower and ("tcp" in line_lower or "telnet" in line_lower):
+            if ("23/" in line_lower or "telnet" in line_lower) and ("tcp" in line_lower or "telnet" in line_lower):
                 if any(kw in line_lower for kw in vuln_keywords):
                     return True
         return False

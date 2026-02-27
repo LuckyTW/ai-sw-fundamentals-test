@@ -116,7 +116,7 @@ class AnalysisValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="history_count",
             description="main 히스토리 7개 커밋 전부 포함",
-            points=2,
+            points=1,
             validator=self._check_history_count,
             hint="main 브랜치의 head에서 root까지 모든 커밋이 포함되어야 합니다",
         ))

@@ -42,7 +42,7 @@ class StructureValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="no_builtin_sort",
             description="sorted()/list.sort()/heapq를 사용하지 않는지 확인",
-            points=7,
+            points=5,
             validator=self._check_no_builtin_sort,
             hint="sorted(), list.sort(), heapq 대신 merge sort를 직접 구현하세요",
             ai_trap=True,
@@ -51,7 +51,7 @@ class StructureValidator(BaseValidator):
         self.checklist.add_item(CheckItem(
             id="graph_structure",
             description="커밋 저장소가 dict(해시맵) 기반인지 확인",
-            points=5,
+            points=7,
             validator=self._check_graph_structure,
             hint="커밋 저장소를 dict 또는 {} 로 초기화하세요 (예: self.commits = {})",
         ))

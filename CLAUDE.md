@@ -212,9 +212,9 @@ CLI (run_grading.py)
 | | | model_fields | 6점 |
 | | | model_type_hints | 5점 |
 | | | model_post_init | 7점 |
-| `PatternValidator` | 25 | pattern_yield | 8점 (**AI 트랩**) |
+| `PatternValidator` | 25 | pattern_yield | 7점 (**AI 트랩**) |
 | | | pattern_decorator | 7점 |
-| | | pattern_type_hints | 5점 |
+| | | pattern_type_hints | 6점 |
 | | | pattern_no_any | 5점 (**AI 트랩**) |
 | `CLIValidator` | 30 | cli_runnable | 5점 |
 | | | cli_help | 5점 (**AI 트랩**) |
@@ -302,8 +302,8 @@ CLI (run_grading.py)
 
 | Validator | 가중치 | CheckItem (총 15개) | 배점 |
 |-----------|--------|---------------------|------|
-| `StructureValidator` | 25 | node_class | 10점 |
-| | | no_builtin_cache | 8점 (**AI 트랩**) |
+| `StructureValidator` | 25 | node_class | 11점 |
+| | | no_builtin_cache | 7점 (**AI 트랩**) |
 | | | linked_list_ops | 7점 |
 | `BasicCommandValidator` | 25 | cli_runnable | 3점 |
 | | | set_get | 8점 |
@@ -341,8 +341,8 @@ CLI (run_grading.py)
 | Validator | 가중치 | CheckItem (총 16개) | 배점 |
 |-----------|--------|---------------------|------|
 | `StructureValidator` | 20 | commit_class | 8점 |
-| | | no_builtin_sort | 7점 (**AI 트랩**) |
-| | | graph_structure | 5점 |
+| | | no_builtin_sort | 5점 (**AI 트랩**) |
+| | | graph_structure | 7점 |
 | `BasicCommandValidator` | 20 | cli_runnable | 3점 |
 | | | init_command | 5점 |
 | | | commit_basic | 6점 |
