@@ -1,0 +1,41 @@
+# 미션 메타데이터
+name: "프롬프트 관리 프로그램"
+description: "Python 핵심 문법(변수, 조건문, 반복문, 함수, list+dict)을 프롬프트 관리 도메인에 적용하는 코딩 시험"
+level: 1
+category: "python"
+time_limit: 900  # 15분 (초 단위)
+passing_score: 70
+
+# 사용할 검증기 목록 (총 100점)
+validators:
+  - module: "plugins.python.validators.pm_structure_validator"
+    class: "PMStructureValidator"
+    weight: 25
+
+  - module: "plugins.python.validators.pm_cli_validator"
+    class: "PMCLIValidator"
+    weight: 45
+
+  - module: "plugins.python.validators.pm_interaction_validator"
+    class: "PMInteractionValidator"
+    weight: 30
+
+# 실행 환경 설정
+execution:
+  timeout: 300
+  sandbox: false
+  working_directory: null  # submission_dir 사용
+
+# AI 함정 요소 정리 (3개)
+ai_traps:
+  - item: "search_content"
+    trap_description: "AI가 제목(title)만 검색하고 내용(content)을 검색 대상에서 누락"
+    correct_answer: "제목 또는 내용에서 키워드 검색"
+
+  - item: "add_validation"
+    trap_description: "AI가 입력 검증 없이 빈 제목도 프롬프트로 등록"
+    correct_answer: "빈 제목 입력 시 안내 메시지 출력 후 추가 거부"
+
+  - item: "favorite_toggle"
+    trap_description: "AI가 즐겨찾기 추가(True 설정)만 구현하고 해제(False)를 미구현"
+    correct_answer: "이미 즐겨찾기면 해제, 아니면 추가 (토글 방식)"

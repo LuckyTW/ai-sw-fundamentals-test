@@ -28,6 +28,7 @@ python3 scripts/run_grading.py --student-id sample --mission-id linux_level2_mis
 # Python 미션 채점 (--submission-dir 필수)
 python3 scripts/run_grading.py --student-id <학생ID> --mission-id python_level1_mission01 --submission-dir /path/to/submission
 python3 scripts/run_grading.py --student-id <학생ID> --mission-id python_level1_mission02 --submission-dir /path/to/submission
+python3 scripts/run_grading.py --student-id <학생ID> --mission-id python_level1_mission03 --submission-dir /path/to/submission
 
 # 자료구조 미션 채점 (--submission-dir 필수)
 python3 scripts/run_grading.py --student-id <학생ID> --mission-id ds_level1_mission01 --submission-dir /path/to/submission
@@ -37,6 +38,9 @@ python3 scripts/run_grading.py --student-id sample --mission-id python_level1_mi
 
 # 샘플 정답 코드로 Python mission02 채점 (테스트용)
 python3 scripts/run_grading.py --student-id sample --mission-id python_level1_mission02 --submission-dir sample_submission_python02
+
+# 샘플 정답 코드로 Python mission03 채점 (테스트용)
+python3 scripts/run_grading.py --student-id sample --mission-id python_level1_mission03 --submission-dir sample_submission_python03
 
 # 샘플 정답 코드로 DS mission01 채점 (테스트용)
 python3 scripts/run_grading.py --student-id sample --mission-id ds_level1_mission01 --submission-dir sample_submission_ds
@@ -82,13 +86,16 @@ linux-test/
 ├── plugins/                            # Validator 플러그인 (미션 유형별)
 │   ├── linux/validators/               #   리눅스 미션용 (1개)
 │   │   └── linux_auditor_validator.py  #   보안 감사 도구 (subprocess+tmpdir 기반)
-│   ├── python/validators/              #   Python 미션용 (5개 + 헬퍼)
+│   ├── python/validators/              #   Python 미션용 (8개 + 헬퍼)
 │   │   ├── _helpers.py                 #     공통 유틸 (import_student_module 등)
 │   │   ├── model_validator.py
 │   │   ├── pattern_validator.py
 │   │   ├── cli_validator.py
 │   │   ├── persistence_validator.py
-│   │   └── log_analyzer_validator.py
+│   │   ├── log_analyzer_validator.py
+│   │   ├── pm_structure_validator.py   #     프롬프트 관리 AST 분석형 (함수/구조/초기데이터)
+│   │   ├── pm_cli_validator.py         #     프롬프트 관리 subprocess형 (메뉴/추가/검색)
+│   │   └── pm_interaction_validator.py #     프롬프트 관리 subprocess형 (상세/즐겨찾기/종료)
 │   ├── ds/validators/                  #   자료구조 미션용 (4개)
 │   │   ├── structure_validator.py      #     AST 분석형 (Node 클래스, 금지 import)
 │   │   ├── basic_command_validator.py  #     subprocess형 (SET/GET/DEL/EXISTS/DBSIZE)
@@ -112,9 +119,12 @@ linux-test/
 │   ├── python/
 │   │   ├── level1/mission01/           #   Python 도서 관리 시스템 코딩 시험
 │   │   │   └── template/              #     cli.py, filters.py, models.py, storage.py
-│   │   └── level1/mission02/           #   서버 접근 로그 분석기
+│   │   ├── level1/mission02/           #   서버 접근 로그 분석기
+│   │   │   └── template/
+│   │   │       └── access_log_sample.csv
+│   │   └── level1/mission03/           #   프롬프트 관리 프로그램
 │   │       └── template/
-│   │           └── access_log_sample.csv
+│   │           └── prompt_manager.py
 │   ├── ds/
 │   │   └── level1/mission01/           #   Mini LRU 캐시 구현 시험
 │   │       └── template/              #     lru_cache.py, cli.py
@@ -133,6 +143,9 @@ linux-test/
 │
 ├── sample_submission_python02/         # python_level1_mission02 정답 예시 코드
 │   └── log_analyzer.py                 #   CSV 파싱 + IP/상태코드/엔드포인트 분석
+│
+├── sample_submission_python03/         # python_level1_mission03 정답 예시 코드
+│   └── prompt_manager.py               #   REPL 프롬프트 관리 프로그램
 │
 ├── sample_submission_ds/               # ds_level1_mission01 정답 예시 코드
 │   ├── lru_cache.py                    #   Node + DoublyLinkedList + LRUCache
@@ -262,6 +275,43 @@ CLI (run_grading.py)
 - `slow_values`: response_time 소수점(33.7)을 정수 처리하여 평균 오차 발생
 
 **Validator 패턴**: subprocess 실행형 + 파일 I/O형 (tmpdir에 CSV 생성 → 학생 코드 실행 → 리포트 파일 검증)
+
+---
+
+### python_level1_mission03 — 프롬프트 관리 프로그램
+
+- **제한시간**: 900초 (15분) | **합격**: 70점
+- **실행 환경**: macOS/Linux 모두 가능 (subprocess + stdin 기반)
+- **제출물**: `prompt_manager.py` 1개 파일
+- **정답 예시**: `sample_submission_python03/` 디렉토리
+
+| Validator | 가중치 | CheckItem (총 16개) | 배점 |
+|-----------|--------|---------------------|------|
+| `PMStructureValidator` | 25 | func_separation | 8점 |
+| | | data_structure | 7점 |
+| | | initial_data | 5점 |
+| | | no_external_lib | 5점 |
+| `PMCLIValidator` | 45 | menu_display | 5점 |
+| | | add_prompt | 8점 |
+| | | list_prompts | 7점 |
+| | | category_filter | 7점 |
+| | | search_title | 8점 |
+| | | search_content | 5점 (**AI 트랩**) |
+| | | add_validation | 5점 (**AI 트랩**) |
+| `PMInteractionValidator` | 30 | detail_view | 8점 |
+| | | favorite_toggle | 7점 (**AI 트랩**) |
+| | | favorite_list | 7점 |
+| | | invalid_input | 3점 |
+| | | exit_message | 5점 |
+
+**AI 트랩 포인트** (3개, 합계 17점 — 모두 실패해도 83점 Pass):
+- `search_content`: 제목만 검색, 내용(content) 미포함
+- `add_validation`: 빈 제목 입력 시 검증 없이 추가
+- `favorite_toggle`: 즐겨찾기 추가만 가능, 해제(토글) 미구현
+
+**Validator 패턴 분류**:
+- AST 분석형: `PMStructureValidator` — `ast` 모듈로 함수 분리, 데이터 구조, 초기 데이터 검사
+- subprocess 실행형: `PMCLIValidator`, `PMInteractionValidator` — `subprocess.run()` + stdin pipe
 
 ---
 
@@ -622,11 +672,11 @@ ai_traps:
 
 | 구분 | 수치 |
 |------|------|
-| 총 미션 수 | 6개 (Linux 1, Python 2, DS 1, Algo 1, DB 1) |
-| 총 Validator 클래스 | 17개 (Linux 1, Python 5, DS 4, Algo 4, DB 3) |
-| 총 CheckItem 수 | 81개 (Linux level2 7, Python mission01 17 + mission02 7, DS mission01 15, Algo level2 16, DB level3 19) |
-| 총 AI 트랩 항목 | 24개 (Linux level2 4, Python mission01 4 + mission02 3, DS mission01 4, Algo level2 4, DB level3 5) |
-| 정답 예시 코드 | `sample_submission/` (Python mission01), `sample_submission_python02/` (Python mission02), `sample_submission_linux/` (Linux level2), `sample_submission_ds/` (DS mission01), `sample_submission_algo/` (Algo level2 mission01), `sample_submission_db/` (DB level3 mission01) |
+| 총 미션 수 | 7개 (Linux 1, Python 3, DS 1, Algo 1, DB 1) |
+| 총 Validator 클래스 | 20개 (Linux 1, Python 8, DS 4, Algo 4, DB 3) |
+| 총 CheckItem 수 | 97개 (Linux level2 7, Python mission01 17 + mission02 7 + mission03 16, DS mission01 15, Algo level2 16, DB level3 19) |
+| 총 AI 트랩 항목 | 27개 (Linux level2 4, Python mission01 4 + mission02 3 + mission03 3, DS mission01 4, Algo level2 4, DB level3 5) |
+| 정답 예시 코드 | `sample_submission/` (Python mission01), `sample_submission_python02/` (Python mission02), `sample_submission_python03/` (Python mission03), `sample_submission_linux/` (Linux level2), `sample_submission_ds/` (DS mission01), `sample_submission_algo/` (Algo level2 mission01), `sample_submission_db/` (DB level3 mission01) |
 
 ### 미구현 / 향후 작업
 
